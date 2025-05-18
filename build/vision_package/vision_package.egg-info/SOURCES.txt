@@ -1,0 +1,14 @@
+package.xml
+setup.cfg
+setup.py
+../../build/vision_package/vision_package.egg-info/PKG-INFO
+../../build/vision_package/vision_package.egg-info/SOURCES.txt
+../../build/vision_package/vision_package.egg-info/dependency_links.txt
+../../build/vision_package/vision_package.egg-info/requires.txt
+../../build/vision_package/vision_package.egg-info/top_level.txt
+../../build/vision_package/vision_package.egg-info/zip-safe
+resource/vision_package
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py
+vision_package/__init__.py

@@ -1,0 +1,30 @@
+running egg_info
+creating ../../build/vision_package/vision_package.egg-info
+writing ../../build/vision_package/vision_package.egg-info/PKG-INFO
+writing dependency_links to ../../build/vision_package/vision_package.egg-info/dependency_links.txt
+writing requirements to ../../build/vision_package/vision_package.egg-info/requires.txt
+writing top-level names to ../../build/vision_package/vision_package.egg-info/top_level.txt
+writing manifest file '../../build/vision_package/vision_package.egg-info/SOURCES.txt'
+reading manifest file '../../build/vision_package/vision_package.egg-info/SOURCES.txt'
+writing manifest file '../../build/vision_package/vision_package.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /mnt/dietpi_userdata/roboBeach/build/vision_package/build
+creating /mnt/dietpi_userdata/roboBeach/build/vision_package/build/lib
+creating /mnt/dietpi_userdata/roboBeach/build/vision_package/build/lib/vision_package
+copying vision_package/__init__.py -> /mnt/dietpi_userdata/roboBeach/build/vision_package/build/lib/vision_package
+running install
+running install_lib
+creating /mnt/dietpi_userdata/roboBeach/install/vision_package/lib/python3.11/site-packages/vision_package
+copying /mnt/dietpi_userdata/roboBeach/build/vision_package/build/lib/vision_package/__init__.py -> /mnt/dietpi_userdata/roboBeach/install/vision_package/lib/python3.11/site-packages/vision_package
+byte-compiling /mnt/dietpi_userdata/roboBeach/install/vision_package/lib/python3.11/site-packages/vision_package/__init__.py to __init__.cpython-311.pyc
+running install_data
+creating /mnt/dietpi_userdata/roboBeach/install/vision_package/share/ament_index
+creating /mnt/dietpi_userdata/roboBeach/install/vision_package/share/ament_index/resource_index
+creating /mnt/dietpi_userdata/roboBeach/install/vision_package/share/ament_index/resource_index/packages
+copying resource/vision_package -> /mnt/dietpi_userdata/roboBeach/install/vision_package/share/ament_index/resource_index/packages
+copying package.xml -> /mnt/dietpi_userdata/roboBeach/install/vision_package/share/vision_package
+running install_egg_info
+Copying ../../build/vision_package/vision_package.egg-info to /mnt/dietpi_userdata/roboBeach/install/vision_package/lib/python3.11/site-packages/vision_package-0.0.0-py3.11.egg-info
+running install_scripts
+writing list of installed files to '/mnt/dietpi_userdata/roboBeach/build/vision_package/install.log'
