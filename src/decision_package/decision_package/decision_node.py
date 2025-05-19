@@ -107,10 +107,10 @@ class LogicNode(Node):
         """
         centro_x = obj.x + obj.width / 2
         centro_y = obj.y + obj.height / 2
-        return 0.45 < centro_x < 0.55 and centro_y > 0.6
+        return 0.45 < centro_x < 0.55 and centro_y > 0.55
 
     def obtener_frontal(self, lista):
-        """Selecciona el objeto frontal más grande.
+        """Selecciona el objeto frontal más cercano (mayor área + posición).
     
         Args:
             lista (list): Lista de detecciones
@@ -118,8 +118,10 @@ class LogicNode(Node):
         Returns:
             Detection or None: Objeto frontal más grande o None
         """
+        if not lista:
+            return None
         frontales = [obj for obj in lista if self.es_frontal(obj)]
-        return max(frontales, key=lambda o: o.width*o.height) if frontales else None
+        return max(frontales, key=lambda o: (o.width*o.height) * (1 - abs(0.5 - (o.x + o.width/2)))) if frontales else None
 
     def seleccionar_objeto_prioritario(self, lista):
         """Selecciona el objeto más grande por área en imagen.
@@ -139,7 +141,7 @@ class LogicNode(Node):
             img_width (int): Ancho de imagen en píxeles
         
         Returns:
-            str: Comando de movimiento ('FORWARD' o 'LEFT')
+            str: Comando de movimiento ('FORWARD' o 'LEFT' | 'RIGHT')
         """
         centro_x_norm = obj.x + obj.width / 2
         centro_x_px = centro_x_norm * img_width
@@ -153,7 +155,11 @@ class LogicNode(Node):
         angulo = max(min(angulo, ANGULO_MAX), -ANGULO_MAX)
         
         if abs(angulo) > 5:
-            return "LEFT"
+            # Determinar dirección basada en el signo del offset
+            if offset > 0:
+                return "RIGHT"  # Objeto a la derecha -> girar derecha
+            else:
+                return "LEFT"   # Objeto a la izquierda -> girar izquierda
         else:
             return "FORWARD"
 
@@ -187,7 +193,7 @@ class LogicNode(Node):
                 objetivo_actual = self.seleccionar_objeto_prioritario(latas)
                 orden = self.centrar_con_objetivo(objetivo_actual)
                 self.publicar_orden(orden)
-                if "FORWARD" in orden:
+                if orden == "FORWARD":
                     self.estado_actual = IR_A_LATA
 
         elif self.estado_actual == IR_A_LATA:
@@ -218,7 +224,7 @@ class LogicNode(Node):
                 objetivo = self.seleccionar_objeto_prioritario(contenedores)
                 orden = self.centrar_con_objetivo(objetivo)
                 self.publicar_orden(orden)
-                if "FORWARD" in orden:
+                if orden == "FORWARD":
                     self.estado_actual = IR_A_CONTENEDOR
 
         elif self.estado_actual == IR_A_CONTENEDOR:
