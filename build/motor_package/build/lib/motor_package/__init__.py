@@ -108,7 +108,7 @@ class MotorController(Node):
         self.servo_right.start(0)
 
         # Suscripción al tema de control
-        self.subscription = self.create_subscription(String, 'control', self.command_callback, 10)
+        self.subscription = self.create_subscription(String, 'decision', self.command_callback, 10)
 
         # Iniciar motor de escoba
         self.start_broom_motor()
