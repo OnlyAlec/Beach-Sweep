@@ -14,7 +14,7 @@ from vision_ia_msgs.msg import Detections, Detection
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, Duration
 
 DISTANCIA_SEGURA = 0.4  # Distancia mínima para detección de obstáculos (metros)
-CAPACIDAD_MAX = 3       # Máximo de latas que puede transportar el robot
+CAPACIDAD_MAX    = 3       # Máximo de latas que puede transportar el robot
 
 # Estados posibles
 BUSCAR_LATA       = "buscar_lata"       # Buscar latas disponibles
