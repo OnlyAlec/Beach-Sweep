@@ -22,7 +22,7 @@ class SensorNode(Node):
         
         # -- 3. Crear temporizador para publicar distancia
         timer_period = 1.0 / 10 # 10 Hz
-        self.timer = self.create_time(timer_period, self.timer_callback)
+        self.timer = self.create_timer(timer_period, self.timer_callback
                 
     # -- Se activa cuando se llama al temporizador
     def timer_callback(self):
