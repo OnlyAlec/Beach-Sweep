@@ -8,8 +8,14 @@ class MotorController(Node):
     def __init__(self):
         super().__init__('motor_controller')
         self.door = True 
-        self.serp = False
+        self.floor = True
         
+        # Constantes para ángulos de servos
+        self.SERVO_MIN_DUTY = 2.5    # 0 grados
+        self.SERVO_MAX_DUTY = 12.5   # 180 grados
+        self.SERVO_MID_DUTY = 7.5    # 90 grados
+        self.SERVO_45_DUTY = 5.0     # 45 grados
+
         # Variables para control de espiral
         self.spiral_active = False
         self.spiral_right_speed = 0
@@ -49,6 +55,7 @@ class MotorController(Node):
         # Pines para los servos
         self.SERVO_LEFT = 21
         self.SERVO_RIGHT = 25
+        self.SERVO_FLOOR = 26
 
         # Pines para el motor de la escoba
         self.BROOM_A = 9
@@ -77,7 +84,8 @@ class MotorController(Node):
             self.BROOM_PWM,
             self.BROOM_STBY,
             self.SERVO_LEFT, 
-            self.SERVO_RIGHT
+            self.SERVO_RIGHT,
+            self.SERVO_FLOOR
         ], GPIO.OUT)
 
         # Activar los puentes H
@@ -102,13 +110,15 @@ class MotorController(Node):
         # PWM para servos
         self.servo_left = GPIO.PWM(self.SERVO_LEFT, 50)
         self.servo_right = GPIO.PWM(self.SERVO_RIGHT, 50)
-
+        self.servo_floor = GPIO.PWM(self.SERVO_FLOOR, 50)
+        
         # Iniciar PWM para servos
         self.servo_left.start(0)
         self.servo_right.start(0)
+        self.servo_floor.start(0)
 
         # Suscripción al tema de control
-        self.subscription = self.create_subscription(String, 'decision', self.command_callback, 10)
+        self.subscription = self.create_subscription(String, 'control', self.command_callback, 10)
 
         # Iniciar motor de escoba
         self.start_broom_motor()
@@ -137,9 +147,22 @@ class MotorController(Node):
             self.stop_spiral()
             self.open_door()
         elif command == "CLOSE_DOOR" and not self.door:
+            self.stop_spiral()
+            self.close_door()
+        elif command == "OPEN_DOOR" and not self.door:
             self.get_logger().info("Door Opened")
         elif command == "CLOSE_DOOR" and self.door:
             self.get_logger().info("Door Closed")
+        elif command == "INCLINE" and self.floor:
+            self.stop_spiral()
+            self.incline_floor()
+        elif command == "DEINCLINE" and not self.floor:
+            self.stop_spiral()
+            self.deincline_floor()
+        elif command == "INCLINE" and not self.floor:
+            self.get_logger().info("Floor Inclined")
+        elif command == "DEINCLINE" and self.floor:
+            self.get_logger().info("Floor Deinclined")
         else:
             self.get_logger().info(f"Comando desconocido: {command}")
 
@@ -213,21 +236,39 @@ class MotorController(Node):
 
     # Abrir compuerta
     def open_door(self):
+        """Abre la compuerta de entrada a 180 grados."""
         self.door = False
-        self.servo_left.ChangeDutyCycle(12.5)  # 180 grados
-        self.servo_right.ChangeDutyCycle(12.5)
+        self.servo_left.ChangeDutyCycle(self.SERVO_MAX_DUTY)  # 180 grados
+        self.servo_right.ChangeDutyCycle(self.SERVO_MAX_DUTY)
         time.sleep(0.5)
         self.servo_left.ChangeDutyCycle(0)
         self.servo_right.ChangeDutyCycle(0)
 
     # Cerrar compuerta
     def close_door(self):
+        """Cierra la compuerta de entrada a 0 grados."""
         self.door = True
-        self.servo_left.ChangeDutyCycle(2.5)  # 0 grados
-        self.servo_right.ChangeDutyCycle(2.5)
+        self.servo_left.ChangeDutyCycle(self.SERVO_MIN_DUTY)  # 0 grados
+        self.servo_right.ChangeDutyCycle(self.SERVO_MIN_DUTY)
         time.sleep(0.5)
         self.servo_left.ChangeDutyCycle(0)
         self.servo_right.ChangeDutyCycle(0)
+
+    def incline_floor(self):
+        """Inclina el piso de almacenamiento a 45 grados para descargar el contenido."""
+        self.floor = False
+        self.servo_floor.ChangeDutyCycle(self.SERVO_45_DUTY)  # 45 grados
+        time.sleep(0.5)  # Esperar a que el servo alcance la posición
+        self.servo_floor.ChangeDutyCycle(0)  # Detener el PWM para evitar vibraciones
+        self.get_logger().info("Piso inclinado a 45 grados")
+
+    def deincline_floor(self):
+        """Devuelve el piso de almacenamiento a su posición horizontal (0 grados)."""
+        self.floor = True
+        self.servo_floor.ChangeDutyCycle(self.SERVO_MIN_DUTY)  # 0 grados
+        time.sleep(0.5)  # Esperar a que el servo alcance la posición
+        self.servo_floor.ChangeDutyCycle(0)  # Detener el PWM para evitar vibraciones
+        self.get_logger().info("Piso devuelto a posición horizontal")
 
     # Iniciar motor de escoba
     def start_broom_motor(self):
