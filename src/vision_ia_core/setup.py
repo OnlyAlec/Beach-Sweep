@@ -26,7 +26,6 @@ setup(
     maintainer_email='eli@todo.todo',
     description='Vision IA Core package with YOLO detection and custom messages',
     license='MIT',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'camera_node = vision_ia_core.camera_node:main',

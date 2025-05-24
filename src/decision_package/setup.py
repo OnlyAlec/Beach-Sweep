@@ -12,13 +12,12 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/decision.launch.py']),
     ],
-    install_requires=['setuptools', 'vision_ia_msgs'],
+    install_requires=['setuptools'],
     zip_safe=True,
     maintainer='dietpi',
     maintainer_email='alexis_chacont@hotmail.com',
     description='This package contains the logic behind the robots actions',
     license='MIT',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'decision_node = decision_package.decision_node:main',

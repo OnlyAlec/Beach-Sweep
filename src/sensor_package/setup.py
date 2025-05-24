@@ -18,7 +18,6 @@ setup(
     maintainer_email='alexis_chacont@hotmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'sensor_node = sensor_package.sensor_node:main',
