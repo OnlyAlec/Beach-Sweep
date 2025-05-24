@@ -1,7 +1,16 @@
-# ==================================================================================
-# CAMERA NODE
-# ==================================================================================
-# Se encarga de leer un video y publicarlo como un stream de imágenes.
+"""
+Nodo de Cámara para el sistema RoboBeach
+
+Responsabilidades:
+1. Capturar frames de video desde archivo o cámara en vivo
+2. Convertir frames a mensajes ROS2 Image
+3. Publicar stream de imágenes para procesamiento de detección
+4. Mantener consistencia en la frecuencia de frames
+5. Gestionar bucle automático del video para testing continuo
+
+Tópicos publicados:
+- robot/vision/frames (sensor_msgs/Image): Stream de frames de video
+"""
 
 import rclpy
 from rclpy.node import Node
@@ -15,8 +24,7 @@ class CameraNode(Node):
     def __init__(self):
         super().__init__('camera_node')
 
-        # -- Publicación al Topic 'camera_frames' con tipo Image guardando los ultimos 10 --
-        self.publisher_ = self.create_publisher(Image, 'camera_frames', 10)
+        self.publisher_ = self.create_publisher(Image, 'robot/vision/frames', 10)
         self.bridge = CvBridge()
 
         # 1. Cargar el video desde el paquete

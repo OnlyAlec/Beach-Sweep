@@ -1,34 +1,48 @@
-# ==================================================================================
-# DETECT NODE
-# ==================================================================================
-# Se encarga de recibir imágenes de la cámara, procesarlas y publicar las detecciones.
+"""
+Nodo de Detección YOLO para el sistema RoboBeach
+
+Responsabilidades:
+1. Recibir frames de video del nodo de cámara
+2. Aplicar modelo YOLO entrenado para detectar objetos de interés
+3. Filtrar detecciones por clase (latas, botellas, contenedores)
+4. Calcular coordenadas y área de objetos detectados
+5. Publicar detecciones estructuradas para toma de decisiones
+
+Clases de objetos detectados:
+- can: Latas de bebidas (objetivo de recolección)
+- bottle: Botellas plásticas (objetivo de recolección)  
+- container: Contenedores rojos (objetivo de descarga)
+
+Tópicos suscritos:
+- robot/vision/frames (sensor_msgs/Image): Frames de la cámara
+
+Tópicos publicados:
+- robot/vision/detections (vision_ia_msgs/Detections): Objetos detectados con coordenadas
+"""
 
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from vision_ia_msgs.msg import Detection, Detections
+from vision_ia_core.msg import Detection, Detections
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
 import cv2
 from ultralytics import YOLO
 import os
-import numpy as np
 from ament_index_python.packages import get_package_share_directory
 
 class DetectNode(Node):
     def __init__(self):
         super().__init__('detect_node')
         
-        # -- Suscripción al Topic 'camera_frames' con tipo Image guardando los ultimos 10 --
         self.subscription = self.create_subscription(
             Image,
-            'camera_frames',
+            'robot/vision/frames',
             self.listener_callback,
             10)
         self.subscription
 
-        # -- Publicación al Topic 'detections' con tipo Detections guardando los ultimos 10 --
-        self.publisher_ = self.create_publisher(Detections, 'detections', 10)
+        self.publisher_ = self.create_publisher(Detections, 'robot/vision/detections', 10)
         
         self.bridge = CvBridge()
 

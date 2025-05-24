@@ -1,5 +1,5 @@
 """
-Módulo Logic para sistema de recolección de basura con ROS
+Módulo Decision para sistema de recolección de basura con ROS
 
 Responsable de:
 1. Procesar datos de Sensor (distancia) y AIVision (detecciones YOLO)
@@ -10,11 +10,11 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from sensor_msgs.msg import Range
-from vision_ia_msgs.msg import Detections, Detection
+from vision_ia_core.msg import Detections
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, Duration
 
-DISTANCIA_SEGURA = 0.4  # Distancia mínima para detección de obstáculos (metros)
-CAPACIDAD_MAX    = 3       # Máximo de latas que puede transportar el robot
+DISTANCIA_SEGURA = 0.4      # Distancia mínima para detección de obstáculos (metros)
+CAPACIDAD_MAX    = 3        # Máximo de latas que puede transportar el robot
 
 # Estados posibles
 BUSCAR_LATA       = "buscar_lata"       # Buscar latas disponibles
@@ -23,7 +23,7 @@ BUSCAR_CONTENEDOR = "buscar_contenedor" # Buscar contenedor rojo
 IR_A_CONTENEDOR   = "ir_a_contenedor"   # Navegar hacia el contenedor
 EVITAR            = "evitar"            # Realizar maniobra de evasión
 
-class LogicNode(Node):
+class DecisionNode(Node):
     def __init__(self):
         super().__init__('decision_node')
         
@@ -38,18 +38,18 @@ class LogicNode(Node):
         # Suscriptores
         self.detecciones_sub = self.create_subscription(
             Detections,
-            'detections',
+            'robot/vision/detections',
             self.callback_detecciones,
             qos)
             
         self.distancia_sub = self.create_subscription(
             Range,
-            'distance',
+            'robot/sensors/distance',
             self.callback_distancia,
             qos)
             
         # Publicador de comandos
-        self.comandos_pub = self.create_publisher(String, 'control', qos)
+        self.comandos_pub = self.create_publisher(String, 'robot/motor/commands', qos)
         
         # Variables de estado
         self.detecciones_actuales = []
@@ -253,7 +253,7 @@ class LogicNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = LogicNode()
+    node = DecisionNode()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
