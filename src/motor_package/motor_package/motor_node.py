@@ -131,7 +131,13 @@ class MotorController(Node):
             # Optionally, re-raise or handle more gracefully if servo init failure is critical
             # For now, just log and continue, as chip is already open.
 
-        self.subscription = self.create_subscription(String, 'robot/motor/commands', self.command_callback, 10)
+        # Usar QoS RELIABLE para asegurar la recepción de comandos
+        qos_reliable = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE
+        )
+        self.subscription = self.create_subscription(String, 'robot/motor/commands', self.command_callback, qos_reliable)
 
         # Iniciar motor de escoba
         self.start_broom_motor()

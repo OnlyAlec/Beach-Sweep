@@ -20,12 +20,21 @@ from cv_bridge import CvBridge
 import cv2
 import os
 from ament_index_python.packages import get_package_share_directory
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 class CameraNode(Node):
     def __init__(self):
         super().__init__('camera_node')
 
-        self.publisher_ = self.create_publisher(Image, 'robot/vision/frames', 10)
+        # QoS Profile for sensor data (camera frames)
+        qos_sensor_data = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10  # Match common subscriber depth
+        )
+
+        self.publisher_ = self.create_publisher(Image, 'robot/vision/frames', qos_sensor_data)
         self.bridge = CvBridge()
 
         # 1. Cargar el video desde el paquete

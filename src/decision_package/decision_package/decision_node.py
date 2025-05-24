@@ -28,7 +28,15 @@ class DecisionNode(Node):
         super().__init__('decision_node')
         
         # Configuración de QoS para mejor compatibilidad
-        qos = QoSProfile(
+        qos_reliable = QoSProfile(
+            depth=10, # Igualando la profundidad del subscriber en motor_node
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE, # VOLATILE es común para comandos
+            deadline=Duration(seconds=0) # Opcional, pero bueno tenerlo definido
+        )
+        
+        # QoS para BEST_EFFORT (si otros topics lo necesitan)
+        qos_best_effort = QoSProfile(
             depth=1,
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -40,16 +48,16 @@ class DecisionNode(Node):
             Detections,
             'robot/vision/detections',
             self.callback_detecciones,
-            qos)
+            qos_best_effort) # Usar BEST_EFFORT para datos de sensores si es apropiado
             
         self.distancia_sub = self.create_subscription(
             Range,
             'robot/sensors/distance',
             self.callback_distancia,
-            qos)
+            qos_best_effort) # Usar BEST_EFFORT para datos de sensores si es apropiado
             
         # Publicador de comandos
-        self.comandos_pub = self.create_publisher(String, 'robot/motor/commands', qos)
+        self.comandos_pub = self.create_publisher(String, 'robot/motor/commands', qos_reliable)
         
         # Variables de estado
         self.detecciones_actuales = []

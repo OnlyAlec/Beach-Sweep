@@ -31,19 +31,39 @@ import cv2
 from ultralytics import YOLO
 import os
 from ament_index_python.packages import get_package_share_directory
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 class DetectNode(Node):
     def __init__(self):
         super().__init__('detect_node')
         
+        # QoS Profile for subscribing to sensor data (camera frames)
+        qos_sensor_data_subscriber = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE, # Match publisher (CameraNode)
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        # QoS Profile for publishing detection results
+        # Detections might be considered more critical than raw sensor data,
+        # but BEST_EFFORT is often fine if the decision node can handle occasional missed messages.
+        # If every detection is critical, consider RELIABLE.
+        qos_detection_publisher = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT, # Or RELIABLE if needed
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10 
+        )
+
         self.subscription = self.create_subscription(
             Image,
             'robot/vision/frames',
             self.listener_callback,
-            10)
-        self.subscription
+            qos_sensor_data_subscriber)
+        self.subscription # prevent unused variable warning
 
-        self.publisher_ = self.create_publisher(Detections, 'robot/vision/detections', 10)
+        self.publisher_ = self.create_publisher(Detections, 'robot/vision/detections', qos_detection_publisher)
         
         self.bridge = CvBridge()
 

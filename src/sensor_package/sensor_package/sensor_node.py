@@ -18,13 +18,22 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Range
 from std_msgs.msg import Header
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 class SensorNode(Node):
     def __init__(self):
         super().__init__('sensor_node')
         
+        # QoS Profile for sensor data (distance sensor)
+        qos_sensor_data = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT, # Sensor data often uses BEST_EFFORT
+            durability=DurabilityPolicy.VOLATILE,      # No need for durability for volatile sensor readings
+            history=HistoryPolicy.KEEP_LAST,         # Keep only the latest readings
+            depth=10                                   # A common depth for sensor data
+        )
+
         # -- 1. Crear Publicador Topic "robot/sensors/distance" que manda un Range y guarda los últimos 10  
-        self.publisher_ = self.create_publisher(Range, 'robot/sensors/distance', 10)
+        self.publisher_ = self.create_publisher(Range, 'robot/sensors/distance', qos_sensor_data)
         
         # -- 2. Abrir puerto e inicializar variables 
         self.serial_port = serial.Serial("/dev/ttyUSB0", 115200, timeout=1)
