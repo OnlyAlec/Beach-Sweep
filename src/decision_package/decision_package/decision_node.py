@@ -10,7 +10,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from sensor_msgs.msg import Range
-from vision_ia_core.msg import Detections
+from robot_interfaces.msg import Detections, Detection
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, Duration
 
 DISTANCIA_SEGURA = 0.4      # Distancia mínima para detección de obstáculos (metros)

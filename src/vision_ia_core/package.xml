@@ -7,17 +7,11 @@
   <maintainer email="eli@todo.todo">eli</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>ament_cmake_python</buildtool_depend>
-
-  <!--Dependencias para generar mensajes-->
-  <build_depend>rosidl_default_generators</build_depend>
-  <exec_depend>rosidl_default_runtime</exec_depend>
-  
-  <!--Agregar dependencias necesarias-->
+  <!--Dependencias Python y ROS2-->
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>robot_interfaces</depend>
   <depend>cv_bridge</depend>
   <depend>python3-ultralytics-pip</depend>
 
@@ -27,6 +21,6 @@
   <test_depend>python3-pytest</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>

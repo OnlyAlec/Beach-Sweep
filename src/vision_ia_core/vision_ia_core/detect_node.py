@@ -23,7 +23,7 @@ Tópicos publicados:
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from vision_ia_core.msg import Detection, Detections
+from robot_interfaces.msg import Detection, Detections
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
 import cv2
