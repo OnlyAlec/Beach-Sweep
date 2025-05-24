@@ -19,6 +19,8 @@ setup(
             'launch/robot_system.launch.py', 
             'launch/vision.launch.py'
         ]),
+        # Instalar scripts ejecutables en libexec
+        (os.path.join('lib', package_name), glob('scripts/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

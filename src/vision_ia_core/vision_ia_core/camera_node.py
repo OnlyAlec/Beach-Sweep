@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Nodo de Cámara para el sistema RoboBeach
 

@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""
+Executable script for camera_node
+"""
+from vision_ia_core.camera_node import main
+
+if __name__ == '__main__':
+    main()

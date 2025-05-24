@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Nodo de Detección YOLO para el sistema RoboBeach
 

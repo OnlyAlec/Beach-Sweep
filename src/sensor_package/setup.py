@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+from glob import glob
+import os
 
 package_name = 'sensor_package'
 
@@ -11,6 +13,8 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/sensor.launch.py']),
+        # Instalar scripts ejecutables en libexec
+        (os.path.join('lib', package_name), glob('scripts/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
