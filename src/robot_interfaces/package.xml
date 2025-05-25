@@ -2,14 +2,14 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>robot_interfaces</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>Custom interfaces and messages for RoboBeach cleaning robot</description>
-  <maintainer email="eli@todo.todo">eli</maintainer>
+  <maintainer email="elisaomg124@gmail.com">Elizabeth Becerril</maintainer>
+  <maintainer email="alexis_chacont@hotmail.com">Alexis Chacon</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!--Dependencias para generar mensajes-->
   <build_depend>std_msgs</build_depend>
   <exec_depend>std_msgs</exec_depend>
   <build_depend>rosidl_default_generators</build_depend>

@@ -2,9 +2,11 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>decision_package</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>This package contains the logic behind the robot's actions</description>
-  <maintainer email="alexis_chacont@hotmail.com">dietpi</maintainer>
+  <maintainer email="sofibecerril123@gmail.com">Sofía Becerril</maintainer>
+  <maintainer email="omarrdbz@gmail.com">Omar Díaz</maintainer>
+  <maintainer email="alexis_chacont@hotmail.com">Alexis Chacon</maintainer>
   <license>MIT</license>
 
   <depend>std_msgs</depend>

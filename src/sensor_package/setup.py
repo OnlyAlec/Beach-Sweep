@@ -6,7 +6,7 @@ package_name = 'sensor_package'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='2.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -18,10 +18,11 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='dietpi',
+    maintainer='Andre Salgado, Alexis Chacon',
     maintainer_email='alexis_chacont@hotmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    author_email='andresalgadomena@gmail.com',
+    description='Package for sensor data acquisition, primarily TF-Luna LiDAR via UART.',
+    license='MIT',
     entry_points={
         'console_scripts': [
             'sensor_node = sensor_package.sensor_node:main',

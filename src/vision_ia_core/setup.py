@@ -6,7 +6,7 @@ package_name = 'vision_ia_core'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='1.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -24,9 +24,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='eli',
-    maintainer_email='eli@todo.todo',
-    description='Vision IA Core package with YOLO detection and custom messages',
+    maintainer='Elizabeth Becerril, Alexis Chacon',
+    maintainer_email='alexis_chacont@hotmail.com',
+    author_email='elisaomg124@gmail.com',
+    description='This package contains the vision IA core functionalities',
     license='MIT',
     entry_points={
         'console_scripts': [

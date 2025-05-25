@@ -6,7 +6,7 @@ package_name = 'decision_package'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='1.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -18,9 +18,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='dietpi',
+    maintainer='Sofía Becerril, Omar Díaz, Alexis Chacon',
     maintainer_email='alexis_chacont@hotmail.com',
-    description='This package contains the logic behind the robots actions',
+    author_email='sofibecerril123@gmail.com',
+    description='This package contains the logic behind the robot\'s actions',
     license='MIT',
     entry_points={
         'console_scripts': [
