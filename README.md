@@ -1,4 +1,4 @@
-# 🤖 RoboBeach
+# 🤖🌴 BeachSweepAI
 
 ## 🏗️ Estructura Final del Proyecto
 
