@@ -1,11 +1,21 @@
-# 🤖🌴 BeachSweepAI
+# 🤖🌴 Beach-Sweep
 
-## 🏗️ Estructura Final del Proyecto
+Beach-Sweep es un robot autónomo diseñado para mantener las playas limpias, recogiendo basura (especialmente latas) y depositándolas en un contenedor rojo. Utiliza lo último en tecnología de visión artificial y sensores, garantizando eficiencia y seguridad en cada recorrido. ♻️
+
+El software está estructurado en paquetes independientes para visión, sensores, decisiones y motores, todos integrados en ROS 2. Esto permite facilidad de mantenimiento y escalabilidad para futuras mejoras.
+
+## 🛠️ ¿Cómo funciona?
+ - 👁️‍🗨️ Visión Artificial: Gracias a un modelo YOLO, el robot detecta latas y otros objetos en la arena usando una cámara.
+ - 📡 Sensor LiDAR: Mide distancias y detecta obstáculos en tiempo real, asegurando una navegación segura por la playa.
+ - 🧠 Lógica Autónoma: Una máquina de estados controla el comportamiento: buscar, navegar, recoger y depositar la basura.
+ - 🚗 Control de Motores: Sistema de ruedas, escoba y servos para moverse, recolectar y vaciar las latas en el depósito rojo.
+
+## 🏗️ Estructura del Proyecto
 
 ```
-ULSA_RoboBeach/
+Beach-Sweep/
 ├── 📄 README.md
-├── 📄 TESTING_GUIDE.md
+├── 📄 TESTING.md
 └── src/
     ├── 📦 robot_interfaces/           # Mensajes personalizados (CMake)
     │   ├── CMakeLists.txt
@@ -50,7 +60,7 @@ ULSA_RoboBeach/
         └── launch/decision.launch.py
 ```
 
-## 🔄 Flujo de Datos Unificado
+## 🔄 Flujo de Datos
 
 ```mermaid
 graph TD
@@ -98,7 +108,7 @@ graph TD
 ### **Compilación:**
 
 ```bash
-cd /home/alec/Documents/ULSA/ULSA_RoboBeach
+cd ~/Beach-Sweep/
 source /opt/ros/jazzy/setup.bash
 colcon build
 source install/setup.bash
