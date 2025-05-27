@@ -5,10 +5,26 @@ Beach-Sweep es un robot autónomo diseñado para mantener las playas limpias, re
 El software está estructurado en paquetes independientes para visión, sensores, decisiones y motores, todos integrados en ROS 2. Esto permite facilidad de mantenimiento y escalabilidad para futuras mejoras.
 
 ## 🛠️ ¿Cómo funciona?
- - 👁️‍🗨️ Visión Artificial: Gracias a un modelo YOLO, el robot detecta latas y otros objetos en la arena usando una cámara.
- - 📡 Sensor LiDAR: Mide distancias y detecta obstáculos en tiempo real, asegurando una navegación segura por la playa.
- - 🧠 Lógica Autónoma: Una máquina de estados controla el comportamiento: buscar, navegar, recoger y depositar la basura.
- - 🚗 Control de Motores: Sistema de ruedas, escoba y servos para moverse, recolectar y vaciar las latas en el depósito rojo.
+
+- 👁️‍🗨️ Visión Artificial: Gracias a un modelo YOLO, el robot detecta latas y otros objetos en la arena usando una cámara.
+- 📡 Sensor LiDAR: Mide distancias y detecta obstáculos en tiempo real, asegurando una navegación segura por la playa.
+- 🧠 Lógica Autónoma: Una máquina de estados controla el comportamiento: buscar, navegar, recoger y depositar la basura.
+- 🚗 Control de Motores: Sistema de ruedas, escoba y servos para moverse, recolectar y vaciar las latas en el depósito rojo.
+
+## ⚡ Aceleración por Hardware
+
+El sistema está optimizado para usar **aceleración por hardware** cuando está disponible:
+
+- **🚀 Hailo AI Kit**: Acelera inferencia YOLO hasta 26x más rápido (~25-30 FPS vs 2-5 FPS en CPU)
+- **📱 GPU CUDA**: Fallback para sistemas con GPU NVIDIA
+- **🔧 CPU**: Modo base para compatibilidad universal
+
+### Estado Actual de tu Sistema:
+
+```bash
+# Verificar si Hailo está disponible
+python3 -c "import hailo_platform.hailo_runtime as hrt; print('Hailo:', len(hrt.scan_devices()))"
+```
 
 ## 🏗️ Estructura del Proyecto
 
