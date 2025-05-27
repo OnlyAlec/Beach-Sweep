@@ -3,23 +3,22 @@
 Nodo de Cámara para el sistema RoboBeach
 
 Responsabilidades:
-1. Capturar frames de video desde archivo o cámara en vivo
+1. Capturar frames de cámara usando Picamera2 (Raspberry Pi Camera)
 2. Convertir frames a mensajes ROS2 Image
 3. Publicar stream de imágenes para procesamiento de detección
 4. Mantener consistencia en la frecuencia de frames
-5. Gestionar bucle automático del video para testing continuo
+5. Gestionar limpieza de recursos de cámara
 
 Tópicos publicados:
-- robot/vision/frames (sensor_msgs/Image): Stream de frames de video
+- robot/vision/frames (sensor_msgs/Image): Stream de frames de cámara
 """
 
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from picamera2 import Picamera2
 import cv2
-import os
-from ament_index_python.packages import get_package_share_directory
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 class CameraNode(Node):
@@ -37,37 +36,57 @@ class CameraNode(Node):
         self.publisher_ = self.create_publisher(Image, 'robot/vision/frames', qos_sensor_data)
         self.bridge = CvBridge()
 
-        # 1. Cargar el video desde el paquete
-        package_name = 'vision_ia_core'
-        data_dir = os.path.join(get_package_share_directory(package_name), 'data')
-        video_path = os.path.join(data_dir, 'video.mp4')
-
-        # 2. Verificar si el video existe y abrirlo
-        self.cap = cv2.VideoCapture(video_path)
-        if not self.cap.isOpened():
-            self.get_logger().error(f'❌ ERROR: No se pudo abrir el video: {video_path}')
+        # 1. Inicializar Picamera2
+        try:
+            self.picam2 = Picamera2()
+            
+            # 2. Crear configuración de preview
+            preview_config = self.picam2.create_preview_configuration(
+                main={"size": (1280, 720)},  # resolución principal
+                lores={"size": (320, 240)}   # resolución de bajo coste opcional
+            )
+            self.picam2.configure(preview_config)
+            
+            # 3. Arrancar la cámara
+            self.picam2.start()
+            self.get_logger().info('✅ EXITO: Cámara Picamera2 inicializada correctamente')
+            
+        except Exception as e:
+            self.get_logger().error(f'❌ ERROR: No se pudo inicializar Picamera2: {str(e)}')
             exit(1)
 
-        self.get_logger().info(f'✅ EXITO: Reproduciendo video desde... {video_path}')
-
         # 3. Crear un temporizador para publicar frames a 10 fps
-        timer_period = 1/10  
+        timer_period = 1/60
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     # -- Se activa cada vez que se llama al temporizador --
     def timer_callback(self):
-        ret, frame = self.cap.read()
-
-        if not ret:
-            self.get_logger().info('Video terminado, cerrando nodo...')
-            self.cap.release()
+        try:
+            # Capturar frame como array NumPy en formato RGB
+            frame = self.picam2.capture_array()
+            
+            # Convertir de RGB a BGR para mantener compatibilidad con OpenCV
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            
+            # 4. Publicar el frame como un mensaje de tipo Image
+            msg = self.bridge.cv2_to_imgmsg(frame_bgr, encoding='bgr8')
+            self.publisher_.publish(msg)
+            # self.get_logger().info('>> Frame publicado')-
+            
+        except Exception as e:
+            self.get_logger().error(f'❌ ERROR capturando frame: {str(e)}')
+            self.get_logger().info('Cerrando nodo...')
+            self.cleanup()
             rclpy.shutdown()
-            return
-        
-        # 4. Publicar el frame como un mensaje de tipo Image
-        msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-        self.publisher_.publish(msg)
-        self.get_logger().info('>> Frame publicado')
+    
+    def cleanup(self):
+        """Limpia recursos de la cámara"""
+        try:
+            if hasattr(self, 'picam2'):
+                self.picam2.stop()
+                self.get_logger().info('Cámara Picamera2 detenida correctamente')
+        except Exception as e:
+            self.get_logger().error(f'Error al limpiar recursos: {str(e)}')
 
 def main(args=None):
     rclpy.init(args=args)
@@ -77,6 +96,7 @@ def main(args=None):
     except KeyboardInterrupt:
         node.get_logger().info('🛑 ERROR: Nodo interrumpido por teclado.')
     finally:
+        node.cleanup()
         node.destroy_node()
         rclpy.shutdown()
 

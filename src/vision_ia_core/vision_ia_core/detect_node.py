@@ -33,6 +33,14 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
+# Intento de importar Hailo para aceleración
+try:
+    import hailo_platform.hailo_runtime as hrt
+    HAILO_AVAILABLE = True
+except ImportError:
+    HAILO_AVAILABLE = False
+    print("⚠️ ADVERTENCIA: Hailo no está disponible, usando CPU para inferencia")
+
 class DetectNode(Node):
     def __init__(self):
         super().__init__('detect_node')
@@ -72,8 +80,69 @@ class DetectNode(Node):
         data_dir = os.path.join(get_package_share_directory(package_name), 'data')
         model_path = os.path.join(data_dir, 'yolo11n.pt')
 
-        self.model = YOLO(model_path)
+        # Verificar si hay aceleración por hardware disponible
+        self.device = self._detect_best_device()
+        
+        # Cargar modelo según dispositivo disponible
+        if self.device == 'hailo' and HAILO_AVAILABLE:
+            # Buscar modelo HEF para Hailo
+            hef_path = os.path.join(data_dir, 'yolo11n.hef')
+            if os.path.exists(hef_path):
+                self.model = self._load_hailo_model(hef_path)
+                self.get_logger().info(f'🚀 ACELERACIÓN: Modelo Hailo cargado desde: {hef_path}')
+            else:
+                self.get_logger().warn(f'⚠️ Modelo HEF no encontrado en {hef_path}, usando CPU')
+                self.model = YOLO(model_path)
+                self.device = 'cpu'
+        else:
+            # Fallback a CPU/GPU estándar
+            self.model = YOLO(model_path)
+            if self.device == 'cuda':
+                self.model.to('cuda')
+                
         self.get_logger().info(f'✅ EXITO: Modelo YOLO cargado desde: {model_path}')
+        self.get_logger().info(f'🔧 DISPOSITIVO: Usando {self.device} para inferencia')
+
+    def _detect_best_device(self):
+        """Detecta el mejor dispositivo disponible para inferencia"""
+        # 1. Prioridad: Hailo AI Kit
+        if HAILO_AVAILABLE:
+            try:
+                # Verificar si hay dispositivos Hailo disponibles
+                devices = hrt.scan_devices()
+                if devices:
+                    self.get_logger().info(f'🎯 DETECTADO: {len(devices)} dispositivo(s) Hailo disponible(s)')
+                    return 'hailo'
+            except Exception as e:
+                self.get_logger().warn(f'⚠️ Error verificando Hailo: {str(e)}')
+        
+        # 2. Fallback: CUDA si está disponible
+        try:
+            import torch
+            if torch.cuda.is_available():
+                self.get_logger().info('🎯 DETECTADO: GPU CUDA disponible')
+                return 'cuda'
+        except ImportError:
+            pass
+        
+        # 3. Último recurso: CPU
+        self.get_logger().info('🔧 USANDO: CPU para inferencia (considera instalar Hailo para mayor velocidad)')
+        return 'cpu'
+    
+    def _load_hailo_model(self, hef_path):
+        """Carga un modelo en formato HEF para Hailo"""
+        try:
+            # Inicializar dispositivo Hailo
+            self.hailo_device = hrt.create_device()
+            
+            # Cargar el modelo HEF
+            network_group = hrt.load_network_group(self.hailo_device, hef_path)
+            self.hailo_network = network_group
+            
+            return None  # No usamos el modelo YOLO estándar
+        except Exception as e:
+            self.get_logger().error(f'❌ Error cargando modelo Hailo: {str(e)}')
+            raise
 
     # -- Se activa cuando se recibe un mensaje tipo Image --
     def listener_callback(self, msg):
