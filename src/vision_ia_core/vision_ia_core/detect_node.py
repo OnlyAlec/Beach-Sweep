@@ -35,11 +35,20 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 
 # Intento de importar Hailo para aceleración
 try:
-    import hailo_platform.hailo_runtime as hrt
+    from hailo_platform.pyhailort import pyhailort
     HAILO_AVAILABLE = True
+    HAILO_MODULE = pyhailort
+    print("✅ ÉXITO: Hailo disponible usando hailo_platform.pyhailort")
 except ImportError:
-    HAILO_AVAILABLE = False
-    print("⚠️ ADVERTENCIA: Hailo no está disponible, usando CPU para inferencia")
+    try:
+        from hailo_platform import pyhailort
+        HAILO_AVAILABLE = True
+        HAILO_MODULE = pyhailort
+        print("✅ ÉXITO: Hailo disponible usando hailo_platform")
+    except ImportError:
+        HAILO_AVAILABLE = False
+        HAILO_MODULE = None
+        print("⚠️ ADVERTENCIA: Hailo no está disponible, usando CPU para inferencia")
 
 class DetectNode(Node):
     def __init__(self):
@@ -75,32 +84,39 @@ class DetectNode(Node):
         
         self.bridge = CvBridge()
 
-        # 1. Cargar el modelo YOLOv8 desde el paquete
+        # 1. Cargar el modelo YOLO desde el paquete
         package_name = 'vision_ia_core'
         data_dir = os.path.join(get_package_share_directory(package_name), 'data')
-        model_path = os.path.join(data_dir, 'yolo11n.pt')
+        
+        # Definir rutas de modelos por prioridad
+        onnx_path = os.path.join(data_dir, 'yolo11n.onnx')
+        pt_path = os.path.join(data_dir, 'yolo11n.pt')
+        hef_path = os.path.join(data_dir, 'yolo11n.hef')
 
         # Verificar si hay aceleración por hardware disponible
         self.device = self._detect_best_device()
         
-        # Cargar modelo según dispositivo disponible
-        if self.device == 'hailo' and HAILO_AVAILABLE:
-            # Buscar modelo HEF para Hailo
-            hef_path = os.path.join(data_dir, 'yolo11n.hef')
-            if os.path.exists(hef_path):
-                self.model = self._load_hailo_model(hef_path)
-                self.get_logger().info(f'🚀 ACELERACIÓN: Modelo Hailo cargado desde: {hef_path}')
-            else:
-                self.get_logger().warn(f'⚠️ Modelo HEF no encontrado en {hef_path}, usando CPU')
-                self.model = YOLO(model_path)
-                self.device = 'cpu'
-        else:
-            # Fallback a CPU/GPU estándar
-            self.model = YOLO(model_path)
+        # Cargar modelo según dispositivo disponible (prioridad: HEF > ONNX > PT)
+        if self.device == 'hailo' and HAILO_AVAILABLE and os.path.exists(hef_path):
+            # Usar modelo HEF para Hailo
+            self.model = self._load_hailo_model(hef_path)
+            self.get_logger().info(f'🚀 ACELERACIÓN: Modelo Hailo cargado desde: {hef_path}')
+        elif os.path.exists(onnx_path):
+            # Usar modelo ONNX (mejor rendimiento que PyTorch)
+            self.model = YOLO(onnx_path)
             if self.device == 'cuda':
                 self.model.to('cuda')
+            self.get_logger().info(f'⚡ OPTIMIZADO: Modelo ONNX cargado desde: {onnx_path}')
+        elif os.path.exists(pt_path):
+            # Fallback a modelo PyTorch
+            self.model = YOLO(pt_path)
+            if self.device == 'cuda':
+                self.model.to('cuda')
+            self.get_logger().info(f'📦 ESTÁNDAR: Modelo PyTorch cargado desde: {pt_path}')
+        else:
+            raise FileNotFoundError(f"No se encontró ningún modelo en {data_dir}. "
+                                  f"Verifica que exista yolo11n.onnx, yolo11n.pt o yolo11n.hef")
                 
-        self.get_logger().info(f'✅ EXITO: Modelo YOLO cargado desde: {model_path}')
         self.get_logger().info(f'🔧 DISPOSITIVO: Usando {self.device} para inferencia')
 
     def _detect_best_device(self):
@@ -108,8 +124,8 @@ class DetectNode(Node):
         # 1. Prioridad: Hailo AI Kit
         if HAILO_AVAILABLE:
             try:
-                # Verificar si hay dispositivos Hailo disponibles
-                devices = hrt.scan_devices()
+                # Verificar si hay dispositivos Hailo disponibles usando pyhailort
+                devices = HAILO_MODULE.Device.scan()
                 if devices:
                     self.get_logger().info(f'🎯 DETECTADO: {len(devices)} dispositivo(s) Hailo disponible(s)')
                     return 'hailo'
@@ -133,13 +149,21 @@ class DetectNode(Node):
         """Carga un modelo en formato HEF para Hailo"""
         try:
             # Inicializar dispositivo Hailo
-            self.hailo_device = hrt.create_device()
+            devices = HAILO_MODULE.Device.scan()
+            if not devices:
+                raise RuntimeError("No se encontraron dispositivos Hailo")
+            
+            # Crear dispositivo Hailo (toma el primer dispositivo disponible)
+            self.hailo_device = HAILO_MODULE.Device(device_info=devices[0])
             
             # Cargar el modelo HEF
-            network_group = hrt.load_network_group(self.hailo_device, hef_path)
-            self.hailo_network = network_group
+            self.hailo_hef = HAILO_MODULE.HEF(hef_path)
             
-            return None  # No usamos el modelo YOLO estándar
+            # Crear modelo de inferencia
+            self.hailo_infer_model = self.hailo_device.create_infer_model(self.hailo_hef)
+            
+            self.get_logger().info(f'✅ Modelo Hailo cargado exitosamente desde: {hef_path}')
+            return None  # No usamos el modelo YOLO estándar con Hailo
         except Exception as e:
             self.get_logger().error(f'❌ Error cargando modelo Hailo: {str(e)}')
             raise

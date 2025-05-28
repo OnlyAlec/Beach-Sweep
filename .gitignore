@@ -1,0 +1,5 @@
+hailo_conversion_venv/**
+hailo_docker/hailo_dataflow_compiler-3.31.0-py3-none-linux_x86_64.whl
+hailo_docker/hailort_4.21.0_arm64.deb
+hailo_docker/hailort_4.21.0_amd64.deb
+hailo_docker/hailort-4.21.0-cp310-cp310-linux_x86_64.whl
