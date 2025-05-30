@@ -66,15 +66,15 @@ class MotorController(Node):
         self.FRONT_RIGHT_B2 = 5  # in4
         self.FRONT_RIGHT_PWMB = 12  # ENB
 
-        # Pines para motor 3 (Trasero izquierdo)
-        self.REAR_LEFT_A1 = 22  # A0
-        self.REAR_LEFT_A2 = 23  # A1
-        self.REAR_LEFT_PWMA = 13  # ENA_2
+         # Pines para motor 3 (Trasero izquierdo)
+        self.REAR_RIGHT_B1 = 22  # A0
+        self.REAR_RIGHT_B2 = 23  # A1
+        self.REAR_RIGHT_PWMB = 13  # ENA_2
 
         # Pines para motor 4 (Trasero derecho)
-        self.REAR_RIGHT_B1 = 27  # A2
-        self.REAR_RIGHT_B2 = 17  # A3
-        self.REAR_RIGHT_PWMB = 18  # ENB_2
+        self.REAR_LEFT_A1 = 27  # A2
+        self.REAR_LEFT_A2 = 17  # A3
+        self.REAR_LEFT_PWMA = 18  # ENB_2
 
         # Pines para los servos
         self.SERVO_LEFT = 21
