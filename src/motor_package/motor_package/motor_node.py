@@ -57,33 +57,33 @@ class MotorController(Node):
             raise SystemExit(f"Fatal GPIO error: {e}")
 
         # Pines para motor 1 (Frontal izquierdo)
-        self.FRONT_LEFT_A1 = 2  # in1
-        self.FRONT_LEFT_A2 = 4  # in2
-        self.FRONT_LEFT_PWMA = 3  # ENA
+        self.FRONT_LEFT_A1 = 16  # in1
+        self.FRONT_LEFT_A2 = 20  # in2
+        self.FRONT_LEFT_PWMA = 19  # ENA
 
         # Pines para motor 2 (Frontal derecho)
-        self.FRONT_RIGHT_B1 = 5  # in3
-        self.FRONT_RIGHT_B2 = 7  # in4
-        self.FRONT_RIGHT_PWMB = 6  # ENB
+        self.FRONT_RIGHT_B1 = 6 # in3
+        self.FRONT_RIGHT_B2 = 5  # in4
+        self.FRONT_RIGHT_PWMB = 12  # ENB
 
         # Pines para motor 3 (Trasero izquierdo)
-        self.REAR_LEFT_A1 = 17  # A0
-        self.REAR_LEFT_A2 = 27  # A1
-        self.REAR_LEFT_PWMA = 9  # ENA_2
+        self.REAR_LEFT_A1 = 22  # A0
+        self.REAR_LEFT_A2 = 23  # A1
+        self.REAR_LEFT_PWMA = 13  # ENA_2
 
         # Pines para motor 4 (Trasero derecho)
-        self.REAR_RIGHT_B1 = 22  # A2
-        self.REAR_RIGHT_B2 = 23  # A3
-        self.REAR_RIGHT_PWMB = 10  # ENB_2
+        self.REAR_RIGHT_B1 = 27  # A2
+        self.REAR_RIGHT_B2 = 17  # A3
+        self.REAR_RIGHT_PWMB = 18  # ENB_2
 
         # Pines para los servos
         self.SERVO_LEFT = 21
         self.SERVO_RIGHT = 25
 
         # Pines para el motor de la escoba
-        self.BROOM_A = 13
-        self.BROOM_B = 19
-        self.BROOM_PWM = 20
+        self.BROOM_A = 8
+        self.BROOM_B = 7
+        self.BROOM_PWM = 24
 
         # List of pins to be used as digital outputs
         self.digital_output_pins = [
