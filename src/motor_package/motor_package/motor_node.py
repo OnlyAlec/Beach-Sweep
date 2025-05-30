@@ -26,9 +26,8 @@ GPIO_CHIP = 0
 class MotorController(Node):
     def __init__(self):
         super().__init__('motor_controller')
-        self.door = True
-        self.floor = True
-
+        self.door = True 
+        
         # Servo pulse widths in microseconds (µs)
         self.SERVO_MIN_PULSE_US = 500    # 0 degrees
         self.SERVO_MAX_PULSE_US = 2500   # 180 degrees
@@ -57,40 +56,35 @@ class MotorController(Node):
             rclpy.shutdown()
             raise SystemExit(f"Fatal GPIO error: {e}")
 
-        # Pines para motor rueda frontal izquierda
-        self.FRONT_LEFT_A1 = 6
-        self.FRONT_LEFT_A2 = 5
-        self.FRONT_LEFT_PWMA = 12
+        # Pines para motor 1 (Frontal izquierdo)
+        self.FRONT_LEFT_A1 = 2  # in1
+        self.FRONT_LEFT_A2 = 4  # in2
+        self.FRONT_LEFT_PWMA = 3  # ENA
 
-        # Pines para motor rueda frontal derecha
-        self.FRONT_RIGHT_B1 = 16
-        self.FRONT_RIGHT_B2 = 20
-        self.FRONT_RIGHT_PWMB = 19
+        # Pines para motor 2 (Frontal derecho)
+        self.FRONT_RIGHT_B1 = 5  # in3
+        self.FRONT_RIGHT_B2 = 7  # in4
+        self.FRONT_RIGHT_PWMB = 6  # ENB
 
-        # Pines para motor rueda trasera izquierda
-        self.REAR_LEFT_A1 = 27
-        self.REAR_LEFT_A2 = 17
-        self.REAR_LEFT_PWMA = 18
+        # Pines para motor 3 (Trasero izquierdo)
+        self.REAR_LEFT_A1 = 17  # A0
+        self.REAR_LEFT_A2 = 27  # A1
+        self.REAR_LEFT_PWMA = 9  # ENA_2
 
-        # Pines para motor rueda trasera derecha
-        self.REAR_RIGHT_B1 = 22
-        self.REAR_RIGHT_B2 = 23
-        self.REAR_RIGHT_PWMB = 13
-
-        # Pines STBY de los puentes H
-        self.FRONT_STBY = 24
-        self.REAR_STBY = 4
+        # Pines para motor 4 (Trasero derecho)
+        self.REAR_RIGHT_B1 = 22  # A2
+        self.REAR_RIGHT_B2 = 23  # A3
+        self.REAR_RIGHT_PWMB = 10  # ENB_2
 
         # Pines para los servos
         self.SERVO_LEFT = 21
         self.SERVO_RIGHT = 25
-        self.SERVO_FLOOR = 26
 
         # Pines para el motor de la escoba
-        self.BROOM_A = 9
-        self.BROOM_B = 10
-        self.BROOM_PWM = 11
-        self.BROOM_STBY = 8
+        self.BROOM_A = 13
+        self.BROOM_B = 19
+        self.BROOM_PWM = 20
+        self.BROOM_STBY = 16
 
         # List of pins to be used as digital outputs
         self.digital_output_pins = [
@@ -98,7 +92,6 @@ class MotorController(Node):
             self.FRONT_RIGHT_B1, self.FRONT_RIGHT_B2,
             self.REAR_LEFT_A1, self.REAR_LEFT_A2,
             self.REAR_RIGHT_B1, self.REAR_RIGHT_B2,
-            self.FRONT_STBY, self.REAR_STBY,
             self.BROOM_A, self.BROOM_B, self.BROOM_STBY
         ]
 
@@ -109,9 +102,7 @@ class MotorController(Node):
             except lgpio.error as e:
                 self.get_logger().error(f"Failed to claim pin {pin} as output: {e}")
 
-        # Activar los puentes H (set STBY pins HIGH)
-        lgpio.gpio_write(self.chip_handle, self.FRONT_STBY, 1)
-        lgpio.gpio_write(self.chip_handle, self.REAR_STBY, 1)
+        # Activar el puente H de la escoba
         lgpio.gpio_write(self.chip_handle, self.BROOM_STBY, 1)
 
         # PWM para motores de ruedas - initialized to 0% duty cycle
@@ -125,11 +116,8 @@ class MotorController(Node):
         try:
             lgpio.tx_servo(self.chip_handle, self.SERVO_LEFT, self.SERVO_MIN_PULSE_US, self.SERVO_FREQUENCY)
             lgpio.tx_servo(self.chip_handle, self.SERVO_RIGHT, self.SERVO_MIN_PULSE_US, self.SERVO_FREQUENCY)
-            lgpio.tx_servo(self.chip_handle, self.SERVO_FLOOR, self.SERVO_MIN_PULSE_US, self.SERVO_FREQUENCY)
         except lgpio.error as e:
             self.get_logger().error(f"Failed to initialize servos: {e}")
-            # Optionally, re-raise or handle more gracefully if servo init failure is critical
-            # For now, just log and continue, as chip is already open.
 
         # Usar QoS RELIABLE para asegurar la recepción de comandos
         qos_reliable = QoSProfile(
@@ -146,7 +134,7 @@ class MotorController(Node):
     def command_callback(self, msg):
         command = msg.data.upper()
         if command == "FORWARD":
-            self.stop_spiral()
+            self.stop_spiral()  # Detener espiral si está activa
             self.move_forward()
         elif command == "BACKWARD":
             self.stop_spiral()
@@ -172,16 +160,6 @@ class MotorController(Node):
             self.get_logger().info("Door Opened")
         elif command == "CLOSE_DOOR" and self.door:
             self.get_logger().info("Door Closed")
-        elif command == "INCLINE" and self.floor:
-            self.stop_spiral()
-            self.incline_floor()
-        elif command == "DEINCLINE" and not self.floor:
-            self.stop_spiral()
-            self.deincline_floor()
-        elif command == "INCLINE" and not self.floor:
-            self.get_logger().info("Floor Inclined")
-        elif command == "DEINCLINE" and self.floor:
-            self.get_logger().info("Floor Deinclined")
         else:
             self.get_logger().info(f"Comando desconocido: {command}")
 
@@ -189,69 +167,116 @@ class MotorController(Node):
     # Avanzar
     def move_forward(self):
         self.get_logger().info("Moviendo hacia adelante")
+        # Motor 1 (Frontal izquierdo)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 1)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 2 (Frontal derecho)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 1)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 3 (Trasero izquierdo)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A1, 1)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A2, 0)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 1)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
-        self.set_motor_speed(70)
+        # Motor 4 (Trasero derecho)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 0)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
     # Retroceder
     def move_backward(self):
         self.get_logger().info("Moviendo hacia atrás")
+        # Motor 1 (Frontal izquierdo)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 0)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 2 (Frontal derecho)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 0)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 3 (Trasero izquierdo)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A1, 0)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A2, 1)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 0)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
-        self.set_motor_speed(70)
+        # Motor 4 (Trasero derecho)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 1)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
     # Girar a la izquierda
     def turn_left(self):
         self.get_logger().info("Girando a la izquierda")
+        # Motor 1 (Frontal izquierdo)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 0)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 2 (Frontal derecho)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 1)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 20)  # vel = 50
+
+        # Motor 3 (Trasero izquierdo)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A1, 0)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A2, 1)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 1)
-        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
-        self.set_motor_speed(50)
+        # Motor 4 (Trasero derecho)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 0)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 20)  # vel = 50
 
     # Girar a la derecha
     def turn_right(self):
         self.get_logger().info("Girando a la derecha")
+        # Motor 1 (Frontal izquierdo)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 1)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 0)
-        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 0)
-        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 1)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, 0)  # vel = 0
+
+        # Motor 2 (Frontal derecho)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 1)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, 0)  # vel = 0
+
+        # Motor 3 (Trasero izquierdo)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A1, 1)
         lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
+
+        # Motor 4 (Trasero derecho)
         lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 0)
         lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 1)
-
-        self.set_motor_speed(50)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, 100)  # vel = 255
 
     # Detener motores
     def stop_motors(self):
-        self.set_motor_speed(0)
+        # Motor 1 (Frontal izquierdo)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 0)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, 0)
 
-    # Establecer velocidad de los motores (duty is 0-100)
-    def set_motor_speed(self, duty_percent):
-        lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, duty_percent)
-        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, duty_percent)
-        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, duty_percent)
-        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, duty_percent)
+        # Motor 2 (Frontal derecho)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 0)
+        lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, 0)
+
+        # Motor 3 (Trasero izquierdo)
+        lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A1, 0)
+        lgpio.gpio_write(self.chip_handle, self.REAR_LEFT_A2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, 0)
+
+        # Motor 4 (Trasero derecho)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 0)
+        lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 0)
+        lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, 0)
 
     # Abrir compuerta
     def open_door(self):
@@ -273,28 +298,11 @@ class MotorController(Node):
         lgpio.tx_servo(self.chip_handle, self.SERVO_LEFT, self.SERVO_OFF_PULSE_US, self.SERVO_FREQUENCY)
         lgpio.tx_servo(self.chip_handle, self.SERVO_RIGHT, self.SERVO_OFF_PULSE_US, self.SERVO_FREQUENCY)
 
-    def incline_floor(self):
-        """Inclina el piso de almacenamiento a 45 grados para descargar el contenido."""
-        self.floor = False
-        lgpio.tx_servo(self.chip_handle, self.SERVO_FLOOR, self.SERVO_45_PULSE_US, self.SERVO_FREQUENCY)
-        time.sleep(0.5)
-        lgpio.tx_servo(self.chip_handle, self.SERVO_FLOOR, self.SERVO_OFF_PULSE_US, self.SERVO_FREQUENCY)
-        self.get_logger().info("Piso inclinado a 45 grados")
-
-    def deincline_floor(self):
-        """Devuelve el piso de almacenamiento a la posición horizontal."""
-        self.floor = True
-        lgpio.tx_servo(self.chip_handle, self.SERVO_FLOOR, self.SERVO_MIN_PULSE_US, self.SERVO_FREQUENCY)
-        time.sleep(0.5)
-        lgpio.tx_servo(self.chip_handle, self.SERVO_FLOOR, self.SERVO_OFF_PULSE_US, self.SERVO_FREQUENCY)
-        self.get_logger().info("Piso devuelto a posición horizontal")
-
+    # Iniciar motor de escoba
     def start_broom_motor(self):
-        """Inicia el motor de la escoba."""
         lgpio.gpio_write(self.chip_handle, self.BROOM_A, 1)
         lgpio.gpio_write(self.chip_handle, self.BROOM_B, 0)
         lgpio.tx_pwm(self.chip_handle, self.BROOM_PWM, self.MOTOR_PWM_FREQUENCY, 80)
-        self.get_logger().info("Motor de escoba iniciado")
 
     def cleanup(self):
         self.get_logger().info("Cleaning up GPIO resources...")
@@ -312,7 +320,7 @@ class MotorController(Node):
             except lgpio.error as e:
                 self.get_logger().warn(f"Error stopping PWM on pin {pin}: {e}")
 
-        servo_pins = [self.SERVO_LEFT, self.SERVO_RIGHT, self.SERVO_FLOOR]
+        servo_pins = [self.SERVO_LEFT, self.SERVO_RIGHT]
         for pin in servo_pins:
             try:
                 lgpio.tx_servo(self.chip_handle, pin, 0, 0)
@@ -339,8 +347,8 @@ class MotorController(Node):
         """Inicia el movimiento en espiral desde el centro hacia afuera."""
         if not self.spiral_active:
             self.spiral_active = True
-            self.spiral_right_speed = 30
-            self.spiral_left_speed = 10
+            self.spiral_right_speed = 30  # Velocidad inicial derecha
+            self.spiral_left_speed = 10   # Velocidad inicial izquierda
             self.get_logger().info("Iniciando movimiento en espiral")
             self.update_spiral()
 
@@ -361,9 +369,11 @@ class MotorController(Node):
         if not self.spiral_active:
             return
 
+        # Incrementar velocidades
         self.spiral_right_speed = min(100, self.spiral_right_speed + self.spiral_speed_increment)
         self.spiral_left_speed = min(100, self.spiral_left_speed + self.spiral_speed_increment)
 
+        # Configurar dirección de los motores para movimiento hacia adelante
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A1, 1)
         lgpio.gpio_write(self.chip_handle, self.FRONT_LEFT_A2, 0)
         lgpio.gpio_write(self.chip_handle, self.FRONT_RIGHT_B1, 1)
@@ -373,13 +383,20 @@ class MotorController(Node):
         lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B1, 1)
         lgpio.gpio_write(self.chip_handle, self.REAR_RIGHT_B2, 0)
 
+        # Aplicar velocidades diferentes a cada lado
         lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, self.spiral_left_speed)
-        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, self.spiral_right_speed)
         lgpio.tx_pwm(self.chip_handle, self.REAR_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, self.spiral_left_speed)
+        lgpio.tx_pwm(self.chip_handle, self.FRONT_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, self.spiral_right_speed)
         lgpio.tx_pwm(self.chip_handle, self.REAR_RIGHT_PWMB, self.MOTOR_PWM_FREQUENCY, self.spiral_right_speed)
 
-        if self.spiral_active:
-            self.spiral_timer = self.create_timer(self.spiral_update_rate, self.update_spiral)
+        # Verificar si las velocidades se han igualado
+        if self.spiral_right_speed == self.spiral_left_speed:
+            self.get_logger().info("Espiral completada: velocidades igualadas")
+            self.stop_spiral()
+            return
+
+        # Programar siguiente actualización
+        self.spiral_timer = self.create_timer(self.spiral_update_rate, self.update_spiral)
 
 def main(args=None):
     rclpy.init(args=args)
@@ -388,7 +405,7 @@ def main(args=None):
     try:
         rclpy.spin(controller)
     except KeyboardInterrupt:
-        controller.get_logger().info('🛑 Nodo interrumpido por el usuario.')
+        pass
     finally:
         controller.cleanup()
         controller.destroy_node()
