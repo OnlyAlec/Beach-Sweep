@@ -84,7 +84,6 @@ class MotorController(Node):
         self.BROOM_A = 13
         self.BROOM_B = 19
         self.BROOM_PWM = 20
-        self.BROOM_STBY = 16
 
         # List of pins to be used as digital outputs
         self.digital_output_pins = [
@@ -92,7 +91,7 @@ class MotorController(Node):
             self.FRONT_RIGHT_B1, self.FRONT_RIGHT_B2,
             self.REAR_LEFT_A1, self.REAR_LEFT_A2,
             self.REAR_RIGHT_B1, self.REAR_RIGHT_B2,
-            self.BROOM_A, self.BROOM_B, self.BROOM_STBY
+            self.BROOM_A, self.BROOM_B
         ]
 
         # Configurar todos los pines de salida digital
@@ -101,9 +100,6 @@ class MotorController(Node):
                 lgpio.gpio_claim_output(self.chip_handle, pin)
             except lgpio.error as e:
                 self.get_logger().error(f"Failed to claim pin {pin} as output: {e}")
-
-        # Activar el puente H de la escoba
-        lgpio.gpio_write(self.chip_handle, self.BROOM_STBY, 1)
 
         # PWM para motores de ruedas - initialized to 0% duty cycle
         lgpio.tx_pwm(self.chip_handle, self.FRONT_LEFT_PWMA, self.MOTOR_PWM_FREQUENCY, 0)
@@ -300,9 +296,11 @@ class MotorController(Node):
 
     # Iniciar motor de escoba
     def start_broom_motor(self):
+        """Inicia el motor de la escoba."""
         lgpio.gpio_write(self.chip_handle, self.BROOM_A, 1)
         lgpio.gpio_write(self.chip_handle, self.BROOM_B, 0)
-        lgpio.tx_pwm(self.chip_handle, self.BROOM_PWM, self.MOTOR_PWM_FREQUENCY, 80)
+        lgpio.tx_pwm(self.chip_handle, self.BROOM_PWM, self.MOTOR_PWM_FREQUENCY, 40)
+        self.get_logger().info("Motor de escoba iniciado")
 
     def cleanup(self):
         self.get_logger().info("Cleaning up GPIO resources...")
