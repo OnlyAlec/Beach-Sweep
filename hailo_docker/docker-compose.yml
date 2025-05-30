@@ -1,0 +1,19 @@
+services:
+  hailo_tools:
+    image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+    container_name: hailo_tools
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    tty: true
+    stdin_open: true
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBIAN_FRONTEND=noninteractive
+      - TZ=America/Mexico_City
+    command: bash -c "apt-get update && apt-get install -y software-properties-common git python3 python3-pip && apt-get update && bash"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
